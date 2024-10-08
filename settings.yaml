@@ -4,11 +4,11 @@ skip_workflows: []
 llm:
   api_key: ${GRAPHRAG_API_KEY}
   type: openai_chat # or azure_openai_chat
-  model: mistral
-  model_supports_json: true # recommended if this is available for your model.
+  model: Qwen/Qwen2.5-14B-Instruct #deepseek-chat #Qwen/Qwen2.5-14B-Instruct
+  model_supports_json: false # recommended if this is available for your model.
   # max_tokens: 4000
   # request_timeout: 180.0
-  api_base: http://localhost:11434/v1
+  api_base: http://localhost:30000/v1 #https://api.deepseek.com/v1  #http://10.140.24.104:8000/v1
   # api_version: 2024-02-15-preview
   # organization: <organization_id>
   # deployment_name: <azure_model_deployment_name>
@@ -17,8 +17,8 @@ llm:
   # max_retries: 10
   # max_retry_wait: 10.0
   # sleep_on_rate_limit_recommendation: true # whether to sleep when azure suggests wait-times
-  # concurrent_requests: 25 # the number of parallel inflight requests that may be made
-
+  concurrent_requests: 32 # the number of parallel inflight requests that may be made
+  
 parallelization:
   stagger: 0.3
   # num_threads: 50 # the number of threads to use for parallel processing
@@ -31,7 +31,7 @@ embeddings:
   llm:
     api_key: ${GRAPHRAG_API_KEY}
     type: openai_embedding # or azure_openai_embedding
-    model: nomic-embed-text
+    model: jina/jina-embeddings-v2-base-en
     api_base: http://localhost:11434/api
     # api_version: 2024-02-15-preview
     # organization: <organization_id>
@@ -41,15 +41,15 @@ embeddings:
     # max_retries: 10
     # max_retry_wait: 10.0
     # sleep_on_rate_limit_recommendation: true # whether to sleep when azure suggests wait-times
-    # concurrent_requests: 25 # the number of parallel inflight requests that may be made
-    # batch_size: 16 # the number of documents to send in a single request
+    concurrent_requests: 25 # the number of parallel inflight requests that may be made
+    batch_size: 16 # the number of documents to send in a single request
     # batch_max_tokens: 8191 # the maximum number of tokens to send in a single request
     # target: required # or optional
   
 
 
 chunks:
-  size: 300
+  size: 600
   overlap: 100
   group_by_columns: [id] # by default, we don't allow chunks to cross documents
     
@@ -59,6 +59,8 @@ input:
   base_dir: "input"
   file_encoding: utf-8
   file_pattern: ".*\\.txt$"
+
+
 
 cache:
   type: file # or blob

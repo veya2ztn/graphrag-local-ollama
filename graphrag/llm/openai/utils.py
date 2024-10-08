@@ -90,6 +90,10 @@ def get_completion_llm_args(
 def try_parse_json_object(input: str) -> dict:
     """Generate JSON-string output using best-attempt prompting & parsing techniques."""
     try:
+        start_idx = 0
+        while input[start_idx]!="{":
+            start_idx+=1
+        input = input[start_idx:]
         result = json.loads(input)
     except json.JSONDecodeError:
         log.exception("error loading json, json=%s", input)

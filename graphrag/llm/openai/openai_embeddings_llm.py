@@ -18,7 +18,7 @@ class OpenAIEmbeddingsLLM(BaseLLM[EmbeddingInput, EmbeddingOutput]):
     def __init__(self, client: OpenAIClientTypes, configuration: OpenAIConfiguration):
         self._client = client
         self._configuration = configuration
-
+        #raise NotImplementedError(ollama._client._client.base_url)
     async def _execute_llm(
         self, input: EmbeddingInput, **kwargs: Unpack[LLMInput]
     ) -> EmbeddingOutput | None:
@@ -26,8 +26,11 @@ class OpenAIEmbeddingsLLM(BaseLLM[EmbeddingInput, EmbeddingOutput]):
             "model": self._configuration.model,
             **(kwargs.get("model_parameters") or {}),
         }
+        # show ollama host
+        
         embedding_list = []
         for inp in input:
+
             embedding = ollama.embeddings(model=self._configuration.model, prompt=inp)
             embedding_list.append(embedding["embedding"])
         return embedding_list

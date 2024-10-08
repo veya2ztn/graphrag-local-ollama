@@ -77,7 +77,11 @@ class OpenAIConfiguration(Hashable, LLMConfig):
             if result is None:
                 return None
             return int(cast(int, result))
-
+        def lookup_int2(key: str) -> int | None:
+            result = config.get(key)
+            if result is None:
+                return 1
+            return int(cast(int, result))
         def lookup_float(key: str) -> float | None:
             result = config.get(key)
             if result is None:
@@ -106,7 +110,7 @@ class OpenAIConfiguration(Hashable, LLMConfig):
         self._cognitive_services_endpoint = lookup_str("cognitive_services_endpoint")
         self._organization = lookup_str("organization")
         self._proxy = lookup_str("proxy")
-        self._n = lookup_int("n")
+        self._n = lookup_int2("n")
         self._temperature = lookup_float("temperature")
         self._frequency_penalty = lookup_float("frequency_penalty")
         self._presence_penalty = lookup_float("presence_penalty")

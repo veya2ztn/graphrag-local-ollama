@@ -112,7 +112,15 @@ class GraphExtractor:
             ),
         }
 
+        # raise NotImplementedError(f"""
+        #     llm={self._llm._delegate._delegate._delegate._delegate._delegate}
+            
+        #     variables={prompt_variables},
+        #     _input_text_key={self._input_text_key}
+
+        #                           """)
         for doc_index, text in enumerate(texts):
+            
             try:
                 # Invoke the entity extraction
                 result = await self._process_document(text, prompt_variables)

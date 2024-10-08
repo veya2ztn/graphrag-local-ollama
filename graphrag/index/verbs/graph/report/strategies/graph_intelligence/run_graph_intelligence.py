@@ -43,6 +43,7 @@ async def run(
     llm = load_llm(
         "community_reporting", llm_type, reporter, pipeline_cache, llm_config
     )
+
     return await _run_extractor(llm, community, input, level, args, reporter)
 
 

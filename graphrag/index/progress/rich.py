@@ -5,6 +5,7 @@
 
 # Print iterations progress
 import asyncio
+import sys
 
 from datashaper import Progress as DSProgress
 from rich.console import Console, Group
@@ -14,7 +15,7 @@ from rich.spinner import Spinner
 from rich.tree import Tree
 
 from .types import ProgressReporter
-
+import time
 
 # https://stackoverflow.com/a/34325723
 class RichProgressReporter(ProgressReporter):
@@ -30,7 +31,9 @@ class RichProgressReporter(ProgressReporter):
     _disposing: bool = False
     _progressbar: Progress
     _last_refresh: float = 0
-
+    is_redirected: bool = not sys.stdout.isatty()
+    _last_reported_percent: int = 0
+    _last_reported_time: float = 0
     def dispose(self) -> None:
         """Dispose of the progress reporter."""
         self._disposing = True
@@ -104,19 +107,22 @@ class RichProgressReporter(ProgressReporter):
 
     def refresh(self) -> None:
         """Perform a debounced refresh."""
-        now = asyncio.get_event_loop().time()
-        duration = now - self._last_refresh
-        if duration > 0.1:
-            self._last_refresh = now
-            self.force_refresh()
+        if not self._is_redirected():
+            now = asyncio.get_event_loop().time()
+            duration = now - self._last_refresh
+            if duration > 0.1:
+                self._last_refresh = now
+                self.force_refresh()
 
     def force_refresh(self) -> None:
         """Force a refresh."""
-        self.live.refresh()
+        if not self._is_redirected():
+            self.live.refresh()
 
     def stop(self) -> None:
         """Stop the progress reporter."""
-        self._live.stop()
+        if not self._is_redirected():
+            self._live.stop()
 
     def child(self, prefix: str, transient: bool = True) -> ProgressReporter:
         """Create a child progress bar."""
@@ -124,42 +130,65 @@ class RichProgressReporter(ProgressReporter):
 
     def error(self, message: str) -> None:
         """Report an error."""
-        self._console.print(f"❌ [red]{message}[/red]")
+        self._print_message(message, "❌", "red")
 
     def warning(self, message: str) -> None:
         """Report a warning."""
-        self._console.print(f"⚠️ [yellow]{message}[/yellow]")
+        self._print_message(message, "⚠️", "yellow")
 
     def success(self, message: str) -> None:
         """Report success."""
-        self._console.print(f"🚀 [green]{message}[/green]")
+        self._print_message(message, "🚀", "green")
 
     def info(self, message: str) -> None:
         """Report information."""
-        self._console.print(message)
+        self._print_message(message, "ℹ️")
 
     def __call__(self, progress_update: DSProgress) -> None:
         """Update progress."""
         if self._disposing:
             return
-        progressbar = self._progressbar
 
-        if self._task is None:
-            self._task = progressbar.add_task(self._prefix)
+        if self._is_redirected():
+            # Simple text-based progress reporting
+            completed = progress_update.completed_items or progress_update.percent
+            total = progress_update.total_items or 1
+            percentage = (completed / total) * 100
+            current_percent = int(percentage)
+            if self._last_reported_percent == 0:
+                self._last_reported_time = time.time()
+            if current_percent > self._last_reported_percent:
+                remain_time = (time.time() - self._last_reported_time) * (100 - current_percent) / 1 ## this is 1 percent speed
+                print(f"{self._prefix}: {percentage:.1f}% completed (remain: {remain_time:.2f} seconds)", flush=True)
+                self._last_reported_time = time.time()
+                self._last_reported_percent = current_percent
+        else:
+            # Rich progress reporting (existing code)
+            progressbar = self._progressbar
+            if self._task is None:
+                self._task = progressbar.add_task(self._prefix)
+            progress_description = ""
+            if progress_update.description is not None:
+                progress_description = f" - {progress_update.description}"
 
-        progress_description = ""
-        if progress_update.description is not None:
-            progress_description = f" - {progress_update.description}"
+            completed = progress_update.completed_items or progress_update.percent
+            total = progress_update.total_items or 1
+            progressbar.update(
+                self._task,
+                completed=completed,
+                total=total,
+                description=f"{self._prefix}{progress_description}",
+            )
+            if completed == total and self._transient:
+                progressbar.update(self._task, visible=False)
 
-        completed = progress_update.completed_items or progress_update.percent
-        total = progress_update.total_items or 1
-        progressbar.update(
-            self._task,
-            completed=completed,
-            total=total,
-            description=f"{self._prefix}{progress_description}",
-        )
-        if completed == total and self._transient:
-            progressbar.update(self._task, visible=False)
-
-        self.refresh()
+            self.refresh()
+            
+    def _is_redirected(self):
+        return self.is_redirected
+    
+    def _print_message(self, message: str, prefix: str, color: str = "") -> None:
+        if self._is_redirected():
+            print(f"{prefix} {message}", flush=True)
+        else:
+            self._console.print(f"{prefix} [{color}]{message}[/{color}]")

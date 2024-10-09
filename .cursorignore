@@ -1,0 +1,4 @@
+# ignore everything
+*
+# do not ignore app
+!graphrag/

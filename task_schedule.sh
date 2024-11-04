@@ -5,7 +5,7 @@
 user=`whoami`
 if [[ $(hostname) == SH* ]]; then
     partition='AI4Chem'
-    TASKLIMIT=120
+    TASKLIMIT=30
     PENDINGLIMIT=2
 else
     partition='vip_gpu_ailab_low'

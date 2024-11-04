@@ -22,7 +22,7 @@ TEMPROOT="/tmp/graphrag"
 HOSTNAME=$(hostname)
 # the input part file
 # lets use python random_sample_one_name.py random get filename
-INPUT_PART_FILE=`python random_sample_one_name.py|tail -n 1`  #$1
+INPUT_PART_FILE="custom_collection/markdown/whole.jsonl" #`python random_sample_one_name.py|tail -n 1`  #$1
 ## exit when the INPUT_PART_FILE is None
 if [ -z "$INPUT_PART_FILE" ]; then
     echo "[$HOSTNAME][`date`] --  No input part file found, exit"
@@ -33,7 +33,7 @@ fi
 INPUT_PART_NAME=$(basename $INPUT_PART_FILE .jsonl)
 
 
-RESULT_FILE=/mnt/petrelfs/zhangtianning.di/projects/graphrag-local-ollama/physics_whole_graph/$INPUT_PART_NAME
+RESULT_FILE=/mnt/petrelfs/zhangtianning.di/projects/graphrag-local-ollama/custom_collection/graphrag/$INPUT_PART_NAME
 if [ ! -d $RESULT_FILE ]; then
     mkdir -p $RESULT_FILE
 fi
@@ -62,7 +62,7 @@ else
 fi
 
 # the TEMP file
-TEMP_FOLDER=$TEMPROOT/$INPUT_PART_NAME
+TEMP_FOLDER=$RESULT_FILE #$TEMPROOT/$INPUT_PART_NAME
 if [ ! -d $TEMP_FOLDER ]; then
     mkdir -p $TEMP_FOLDER
 fi
@@ -86,6 +86,7 @@ fi
 # USE convert_jsonl_to_csv.py to split data into .txt 
 python convert_jsonl_to_csv.py $INPUT_PART_FILE $TEMP_INPUT_FOLD
 # then we need setup graphrag server
+
 declare -a pids
 
 # ### setup the LLM backend enigine, it should be in background but should be killed when the main thread die
@@ -185,18 +186,18 @@ fi
 echo "[$HOSTNAME][`date`] --  $INPUT_PART_NAME finished"
 
 
-mv $TEMP_FOLDER/output $RESULT_FILE/output
-touch $FINISHLOCK
-### the fold under $RESULT_FILE/output is
-## then after finish it will upload the graph data to the S3 bucket
-unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
-aws s3 --endpoint-url=http://p-ceph-norm-outside.pjlab.org.cn/ --profile afp sync --exclude *.log $RESULT_FILE/output/ s3://llm-pdf-text/pdf_gpu_output/scihub_shared/physics_part/graphrag/version1/$INPUT_PART_NAME
-if [ $? -ne 0 ]; then
-    echo "[$HOSTNAME][`date`] --  $INPUT_PART_NAME up load failed"
-    exit 1
-fi
-## then create the finish lock
-## then remove the temp folder
-rm -rf $TEMP_FOLDER
-## then remove the $RESULT_FILE/output
-rm -rf $RESULT_FILE/output
+#mv $TEMP_FOLDER/output $RESULT_FILE/output
+# touch $FINISHLOCK
+# ### the fold under $RESULT_FILE/output is
+# ## then after finish it will upload the graph data to the S3 bucket
+# unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
+# aws s3 --endpoint-url=http://p-ceph-norm-outside.pjlab.org.cn/ --profile afp sync --exclude *.log $RESULT_FILE/output/ s3://llm-pdf-text/pdf_gpu_output/scihub_shared/physics_part/graphrag/version1/$INPUT_PART_NAME
+# if [ $? -ne 0 ]; then
+#     echo "[$HOSTNAME][`date`] --  $INPUT_PART_NAME up load failed"
+#     exit 1
+# fi
+# ## then create the finish lock
+# ## then remove the temp folder
+# rm -rf $TEMP_FOLDER
+# ## then remove the $RESULT_FILE/output
+# rm -rf $RESULT_FILE/output

@@ -17,7 +17,7 @@ finished_file_set = []
 for fold_name in os.listdir(finished_file_fold):
     fold_path = os.path.join(finished_file_fold,fold_name)
     finishlock= os.path.join(fold_path,'finish.lock')
-    if os.path.exists(finishlock):continue
+    if not os.path.exists(finishlock):continue
     finished_file_set.append(fold_name)
 finished_file_set = set(finished_file_set)
 
@@ -29,6 +29,11 @@ with open("graphrag.finish.lslist",'r') as f:
 finished_file_set = finished_file_set | finished_file_set2
 
 remain_file_set = whole_file_set - finished_file_set
+
+print(f"whole_file_set:{len(whole_file_set)}")
+print(f"finished_file_set:{len(finished_file_set)}")
+print(f"remain_file_set:{len(remain_file_set)}")
+
 if len(remain_file_set) ==0:
     print("")
 else:
